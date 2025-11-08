@@ -1,15 +1,14 @@
-# 🎬 KindergartenAI - Turn Stories into Cinematic Videos
+# 🎬 KindergartenAI
 
 <div align="center">
 
-![KindergartenAI Banner](https://img.shields.io/badge/KindergartenAI-Story_to_Video-FF6B6B?style=for-the-badge&logo=movie-camera&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)
-![React](https://img.shields.io/badge/React-19.2+-61DAFB?style=flat-square&logo=react&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=flat-square&logo=flask&logoColor=white)
+**Transform your storyboards into cinematic videos with AI-powered animation and sound**
 
-**Transform your storyboards into Hollywood-worthy videos with AI-powered animation and cinematic sound effects**
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-19.2+-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactjs.org)
+[![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
 
-[🚀 Quick Start](#-quick-start) • [🎯 Features](#-features) • [📖 Documentation](#-documentation) • [🛠️ Tech Stack](#️-tech-stack)
+[🚀 Quick Start](#-quick-start) • [✨ Features](#-features) • [📖 Documentation](#-documentation) • [🛠️ API](#-api)
 
 </div>
 
@@ -17,11 +16,338 @@
 
 ## 🌟 What is KindergartenAI?
 
-**For Storytellers & Creators:** Imagine bringing your storyboards to life with just a few clicks! KindergartenAI takes your static images and transforms them into smooth, animated videos complete with professional sound effects. Whether you're a children's book author, animator, or content creator, turn your visual stories into cinematic experiences.
+**For Creators & Storytellers:** Bring your storyboards to life! Upload images, generate smooth animations, add cinematic sound effects, and create professional videos in minutes.
 
-**For Developers:** A modular Python framework with React frontend that leverages Runware and Mirelo APIs for AI-powered video generation. Features parallel processing, custom prompts, and a RESTful API for seamless integration.
+**For Developers:** A full-stack application combining Python/Flask backend with React frontend, leveraging AI APIs (Runware for video generation, Mirelo for sound effects) to transform static images into dynamic videos.
 
 ---
+
+## ✨ Features
+
+### 🎨 Creative Tools
+- **AI Video Generation** - Transform static images into fluid animations
+- **Cinematic Sound Design** - Add professional audio layers and effects
+- **Custom Prompts** - Guide AI behavior with your creative vision
+- **Individual Regeneration** - Fix specific scenes without reprocessing everything
+
+### ⚡ Performance
+- **Parallel Processing** - Generate multiple videos simultaneously
+- **Smart Caching** - Avoid redundant operations
+- **Real-time Progress** - Visual feedback during generation
+- **Batch Operations** - Process entire storyboards at once
+
+### 🎯 User Experience
+- **Drag & Drop Interface** - Intuitive storyboard creation
+- **Audio Integration** - Synchronized narration playback
+- **Theme Selection** - Multiple visual styles
+- **Fullscreen Playback** - Professional video viewing
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- API Keys: [Runware](https://runware.ai) & [Mirelo](https://mirelo.ai)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/tylertzm/KindergartenAI.git
+cd KindergartenAI
+
+# Backend setup
+pip install -r requirements.txt
+
+# Frontend setup
+cd _frontend
+npm install
+cd ..
+```
+
+### Configuration
+
+Create `.env` file in project root:
+```bash
+RUNWARE_API_KEY=your_runware_key_here
+MIRELO_API_KEY=your_mirelo_key_here
+```
+
+### Launch
+
+```bash
+# Terminal 1: Start backend
+python server.py
+
+# Terminal 2: Start frontend
+cd _frontend && npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) and start creating!
+
+---
+
+## � How It Works
+
+### The Pipeline
+1. **📸 Upload Images** - Import your storyboard scenes
+2. **🎭 Generate Videos** - AI transforms images into animations
+3. **🔊 Add Sound** - Layer cinematic audio effects
+4. **🎞️ Export** - Download your finished videos
+
+### Architecture
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  React UI   │    │  Flask API  │    │   AI APIs   │
+│             │◄──►│             │◄──►│             │
+│ • Upload    │    │ • Process   │    │ • Runware   │
+│ • Preview   │    │ • Queue     │    │ • Mirelo    │
+│ • Export    │    │ • Cache     │    │             │
+└─────────────┘    └─────────────┘    └─────────────┘
+```
+
+---
+
+## 📖 Documentation
+
+### Core Concepts
+
+#### Storyboard Creation
+- Upload images for each scene
+- Add custom prompts for AI guidance
+- Capture character poses and expressions
+- Generate style-consistent animations
+
+#### Video Generation
+- Parallel processing of multiple scenes
+- Custom animation prompts per image
+- Sound effect integration
+- Individual scene regeneration
+
+#### Audio Integration
+- Automatic narration generation
+- Cinematic sound effects
+- Synchronized playback
+- Background music layering
+
+### File Structure
+```
+KindergartenAI/
+├── server.py                 # Flask API server
+├── videogeneration/          # Video generation module
+├── soundgeneration/          # Sound effects module
+├── _frontend/               # React application
+│   ├── src/
+│   │   ├── components/      # UI components
+│   │   ├── services/        # API integrations
+│   │   └── types/          # TypeScript types
+│   └── public/
+├── uploads/                 # Temporary file storage
+├── output/                  # Generated content
+└── requirements.txt         # Python dependencies
+```
+
+---
+
+## 🛠️ API Reference
+
+### Video Generation Endpoint
+
+```http
+POST /api/generate-videos
+Content-Type: multipart/form-data
+```
+
+**Request Body:**
+```javascript
+{
+  files: [image1.jpg, image2.jpg, ...],  // Scene images
+  prompts: ["sunset scene", "ocean waves"], // Optional prompts
+  add_sound: "true"  // Include sound effects
+}
+```
+
+**Response:**
+```javascript
+{
+  "video_results": [
+    {
+      "index": 0,
+      "success": true,
+      "video_filename": "video_01.mp4",
+      "video_url": "/api/download/video_01.mp4"
+    }
+  ],
+  "sound_results": [
+    {
+      "index": 0,
+      "success": true,
+      "sound_video_paths": ["output/sound_video_01_1.mp4"]
+    }
+  ],
+  "successful_videos": 2,
+  "total_videos": 2
+}
+```
+
+### Python Modules
+
+#### Video Generation
+```python
+from videogeneration.videogeneration import generate_video_from_image
+
+result = generate_video_from_image(
+    image_path="scene.jpg",
+    positive_prompt="smooth camera movement",
+    duration=5,
+    width=1248,
+    height=704
+)
+```
+
+#### Sound Generation
+```python
+from soundgeneration.soundgeneration import generate_sound_for_video
+
+videos_with_sound = generate_sound_for_video(
+    video_source="video.mp4",
+    text_prompt="cinematic atmosphere",
+    creativity_coef=7
+)
+```
+
+---
+
+## 🎯 Use Cases
+
+### 📚 Children's Book Authors
+Transform illustrated stories into animated videos for digital publishing and social media.
+
+### 🎬 Content Creators
+Generate engaging video content from mood boards and storyboards.
+
+### 🎮 Game Developers
+Create animated scenes and cinematics from concept art.
+
+### 🎓 Educators
+Bring historical events and scientific concepts to life with visual explanations.
+
+### 📱 Social Media
+Produce eye-catching video content from static designs and illustrations.
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+# Required API Keys
+RUNWARE_API_KEY=your_runware_api_key
+MIRELO_API_KEY=your_mirelo_api_key
+
+# Optional: Custom Paths
+UPLOAD_FOLDER=./uploads
+OUTPUT_FOLDER=./output
+```
+
+### Video Settings
+- **Resolution**: 1248×704 (optimized for Runware)
+- **Duration**: 5 seconds per scene
+- **Format**: MP4 with H.264
+- **Frame Rate**: 24 FPS
+
+### Audio Settings
+- **Format**: MP3 (Gemini TTS)
+- **Sample Rate**: 24kHz mono
+- **Effects**: Mirelo cinematic library
+
+---
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**❌ API Key Errors**
+```bash
+# Check your .env file
+RUNWARE_API_KEY=your_key_here
+MIRELO_API_KEY=your_key_here
+```
+
+**❌ Video Generation Fails**
+- Verify image format (PNG/JPG/JPEG)
+- Check image dimensions (1024×576+ recommended)
+- Try different prompts
+
+**❌ Audio Not Playing**
+- Ensure browser allows autoplay
+- Check audio format compatibility
+- Verify Gemini API key
+
+**❌ Performance Issues**
+- Reduce concurrent operations
+- Check API rate limits
+- Use smaller batch sizes
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get involved:
+
+### Development Setup
+```bash
+# Fork and clone
+git clone https://github.com/your-username/KindergartenAI.git
+cd KindergartenAI
+
+# Install dependencies
+pip install -r requirements.txt
+cd _frontend && npm install
+
+# Create feature branch
+git checkout -b feature/amazing-feature
+```
+
+### Guidelines
+- Follow existing code style
+- Add tests for new features
+- Update documentation
+- Submit clear pull requests
+
+### Areas for Contribution
+- 🎨 UI/UX improvements
+- ⚡ Performance optimizations
+- 🔧 New AI integrations
+- 📚 Documentation enhancements
+- 🐛 Bug fixes
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **Runware AI** - Advanced video generation technology
+- **Mirelo** - Professional sound design capabilities
+- **Google Gemini** - AI-powered narration
+- **Open Source Community** - Foundational libraries and tools
+
+---
+
+<div align="center">
+
+**Made with ❤️ for storytellers, creators, and dreamers**
+
+[⭐ Star on GitHub](https://github.com/tylertzm/KindergartenAI) • [🐛 Report Issues](https://github.com/tylertzm/KindergartenAI/issues)
+
+</div>
 
 ## ✨ Features
 
