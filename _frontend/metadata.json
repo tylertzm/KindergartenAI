@@ -1,0 +1,7 @@
+{
+  "name": "Act-a-Story",
+  "description": "An AI-powered visual storytelling app. Generate cinematic story beats, act them out using your webcam, and let Gemini AI create a shareable storyboard from your performance.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
