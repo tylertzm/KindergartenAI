@@ -60,11 +60,17 @@ class ImageToVideoGenerator:
         Raises:
             Exception: If encoding fails
         """
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file not found: {image_path}")
+        # Convert to absolute path
+        abs_path = os.path.abspath(image_path)
+        print(f"🔍 Checking image file: {abs_path}")
+        
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"Image file not found: {abs_path}")
+        
+        print(f"✅ Image file exists, size: {os.path.getsize(abs_path)} bytes")
         
         # Determine MIME type based on file extension
-        ext = os.path.splitext(image_path)[1].lower()
+        ext = os.path.splitext(abs_path)[1].lower()
         mime_type_map = {
             '.jpg': 'image/jpeg',
             '.jpeg': 'image/jpeg', 
@@ -73,12 +79,15 @@ class ImageToVideoGenerator:
         }
         
         mime_type = mime_type_map.get(ext, 'image/jpeg')
+        print(f"📄 Detected MIME type: {mime_type}")
         
         try:
-            with open(image_path, 'rb') as f:
+            with open(abs_path, 'rb') as f:
                 image_data = f.read()
                 base64_encoded = base64.b64encode(image_data).decode('utf-8')
-                return f"data:{mime_type};base64,{base64_encoded}"
+                data_uri = f"data:{mime_type};base64,{base64_encoded}"
+                print(f"✅ Image encoded successfully, length: {len(data_uri)} characters")
+                return data_uri
         except Exception as e:
             raise Exception(f"Failed to encode image: {str(e)}")
     
@@ -299,12 +308,18 @@ def generate_video_from_image(
         # Download video if output path specified
         if output_path:
             print(f"📥 Downloading video to: {output_path}")
+            
+            # Ensure output directory exists
+            output_dir = os.path.dirname(output_path)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+            
             video_response = requests.get(result['videoURL'])
             if video_response.status_code == 200:
                 with open(output_path, 'wb') as f:
                     f.write(video_response.content)
                 print("✅ Video downloaded successfully!")
-                result['local_path'] = output_path
+                result['local_path'] = os.path.abspath(output_path)
             else:
                 print(f"⚠️  Failed to download video: {video_response.status_code}")
         
@@ -327,7 +342,7 @@ Examples:
         """
     )
     
-    parser.add_argument("image_path", nargs='?', default="./videogeneration/test.png", help="Path to the input image file (default: test.png)")
+    parser.add_argument("image_path", nargs='?', default="test.png", help="Path to the input image file (default: test.png)")
     parser.add_argument("--prompt", "-p", default="smooth animation, natural movement, facial reactions and actions only, NO Lip movement, high quality", 
                        help="Text prompt to guide video generation")
     parser.add_argument("--duration", "-d", type=int, default=5,

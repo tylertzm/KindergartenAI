@@ -7,6 +7,7 @@ export enum AppState {
   CAPTURING = 'CAPTURING',
   CREATING_STORYBOARD = 'CREATING_STORYBOARD',
   VIEWING_STORYBOARD = 'VIEWING_STORYBOARD',
+  VIDEO_GENERATION = 'VIDEO_GENERATION',
 }
 
 export type BeatStatus = 'pending' | 'processing' | 'done' | 'error';

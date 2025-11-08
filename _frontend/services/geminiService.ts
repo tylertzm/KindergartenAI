@@ -8,68 +8,25 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// --- Prompt Templates from scene_extraction.py ---
-const getSceneExtractionPrompt = (numScenes: number) => `
-You are an expert in visual storytelling and children's media. Please read the fairy tale below and extract ${numScenes} key scenes that are ideal for illustration, animation, or video adaptation.
-
-Each scene should reflect:
-- A major turning point in the plot or transformation in the character's journey
-- Strong emotional tone (joy, surprise, foolishness, misfortune, freedom)
-- A visualizable situation with physical comedy, magical realism, or exaggerated contrast
-- Use of concrete setting, props, or dialogue that would translate well to illustration
-- A moral or thematic significance (e.g. simplicity vs. greed, letting go, perspective)
-
-Return each scene as JSON with the following fields:
-- scene_id
-- original_text: excerpt of the scene
-- who: main character(s) involved
-- where: setting of the scene
-- emotion: dominant tone or moral idea
-- quotes: key dialogue or narration from the scene
-- visual_cues: visual elements like characters, props, animals, gestures
-
-
-Language: English
-Genre: Children's fairytale with moral twist
-Tone: Lighthearted, ironic, simple
-Focus on making each scene useful for visual adaptation.
-
-Fairy tale content:
-`;
-
-const ILLUSTRATION_PROMPT_TEMPLATE = `
-Create a colorful storybook illustration for the following scene:
-Scene discription: {original_text}
-Main Characters: {who}
-Location: {where}
-Mood: {emotion}
-Visual Details: {visual_cues}
-
-requirements:
-Style: hand-drawn watercolor, children's storybook, high contrast, simple shapes, soft lighting
-Framing: wide shot capturing full characters and environment,16:9 aspect ratio
-Audience: children aged 4-8
-Do not include text in the image. Emphasize emotion and character interaction.
-`;
-
-// --- Scene Extraction Types ---
-export interface ExtractedScene {
-    scene_id: number;
-    original_text: string;
-    who: string;
-    where: string;
-    emotion: string;
-    quotes: string;
-    visual_cues: string;
-    drama_score: number;
-    emotion_score: number;
-    visual_score: number;
-    compressibility: number;
-    score?: number;
-}
-
 export const generateCharacterImage = async (description: string, userImageBase64: string): Promise<string> => {
-    const prompt = `**Crucially, you must edit the input image of a person.** Transform the person into a new character based on this description: '${description}'. You MUST retain the person's exact facial expression and body pose from the input image. Place the final character on a neutral grey background. The final image must be a cinematic, high-detail, 16:9 aspect ratio shot that clearly defines the character's appearance.`;
+    const prompt = `You must edit the input image of a person.** Transform the person into a Pixar-style animated character based on this description: '${description}'.
+
+You MUST retain:
+- The person's exact **facial expression** and **body pose**
+- Their **facial structure** (e.g. jawline, cheekbones, forehead shape)
+- **Distinctive facial features** such as eye shape, nose, lips, eyebrows, and hairline
+- Original **skin tone and hair color**, with only gentle stylization
+
+You MAY stylize:
+- Texture and shading in Pixar style (e.g. smooth skin, soft lighting, stylized clothing)
+- Eye gloss and color clarity in Pixar aesthetic
+- Proportions slightly, but do NOT exaggerate to the point of losing identity
+
+Ensure the final result is:
+- Clearly recognizable as a stylized version of the original person
+- Cinematic and highly detailed
+- Rendered in Pixar aesthetic with neutral grey background
+- Shot in a well-lit 16:9 aspect ratio composition focused on character clarity`;
 
     const userImagePart = {
         inlineData: {
@@ -100,88 +57,18 @@ export const generateCharacterImage = async (description: string, userImageBase6
     throw new Error("No character image was generated.");
 }
 
-// --- Scene Extraction Function ---
-export const extractTaleKeyScenes = async (chapterText: string, numScenes: number = 10): Promise<ExtractedScene[]> => {
-    const sceneExtractionPrompt = getSceneExtractionPrompt(numScenes);
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: sceneExtractionPrompt + "\ntale content below:\n" + chapterText,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        scene_id: { type: Type.NUMBER },
-                        original_text: { type: Type.STRING },
-                        who: { type: Type.STRING },
-                        where: { type: Type.STRING },
-                        emotion: { type: Type.STRING },
-                        quotes: { type: Type.STRING },
-                        visual_cues: { type: Type.STRING },
-                        drama_score: { type: Type.NUMBER },
-                        emotion_score: { type: Type.NUMBER },
-                        visual_score: { type: Type.NUMBER },
-                        compressibility: { type: Type.NUMBER }
-                    },
-                    required: ["scene_id", "original_text", "who", "where", "emotion", "quotes", "visual_cues", "drama_score", "emotion_score", "visual_score", "compressibility"]
-                }
-            }
-        }
-    });
-
-    try {
-        const jsonText = response.text.trim();
-        const scenes = JSON.parse(jsonText);
-        
-        // Debug logging
-        console.log('=== SCENE EXTRACTION DEBUG ===');
-        console.log('Number of scenes extracted:', scenes.length);
-        console.log('Extracted scenes:', JSON.stringify(scenes, null, 2));
-        
-        return Array.isArray(scenes) ? scenes : [];
-    } catch (e) {
-        console.error("Failed to parse extracted scenes JSON:", response.text);
-        return [];
-    }
-};
-
-// // --- Scoring Function ---
-// const computeCompositeScore = (scene: ExtractedScene): number => {
-//     /**
-//      * Calculate a composite score for a fairytale scene.
-//      * Emphasizes visual richness and plot turning value.
-//      */
-//     // Normalize scores
-//     const visual = scene.visual_score || 0;
-//     const drama = scene.drama_score || 0;
-//     const emotion = scene.emotion_score || 0;
-//     const compress = scene.compressibility || 0;
-
-//     // Composite formula with weights
-//     const score = (
-//         0.35 * visual +       // visual richness is most important
-//         0.30 * drama +        // key transformation / twist
-//         0.15 * emotion +      // emotional tone (simple)
-//         0.20 * compress       // short-form friendliness
-//     );
-//     return Math.round(score * 100) / 100;
-// };
-
-
 export const generateStyleParagraph = async (theme: string): Promise<string> => {
-    const prompt = `You are an art director for a Pixar-style animated film about '${theme}'. Create a VERY SHORT style guide (2-3 sentences max) that describes the visual style.
+    const prompt = `You are an animation director for a PIXAR-style animated film about '${theme}'. Create a VERY SHORT style guide (2-3 sentences max) that describes the animated visual style.
     
-    Focus on Pixar-style elements:
-    - Color palette (vibrant, warm, saturated, or muted tones)
-    - Lighting mood (soft, dramatic, playful, warm glow)
-    - Visual texture (smooth, painterly, stylized)
-    - Overall atmosphere (whimsical, adventurous, cozy, magical)
+    MUST focus on PIXAR/ANIMATED styles only:
+    - Animation quality (e.g., "Pixar CGI", "stylized 3D animation", "Dreamworks style", "Disney animation")
+    - Lighting approach (e.g., "soft volumetric lighting", "warm character lighting", "dramatic rim lighting", "playful color splashes")
+    - Color palette (e.g., "vibrant saturated colors", "warm pastel tones", "bold primary colors", "whimsical color grading")
+    - Visual texture (e.g., "smooth subsurface scattering", "stylized materials", "cartoon shading", "exaggerated proportions")
     
-    The result should evoke Pixar's signature emotional and visually appealing animation style.
+    The result should look like HIGH-QUALITY 3D ANIMATION in the style of Pixar, not photorealistic or live action.
     
-    Example: "Warm, saturated color palette with golden lighting and soft shadows. Painterly textures with slightly exaggerated proportions. Cozy, whimsical atmosphere with attention to emotional details."`;
+    Example: "Pixar-style CGI animation with warm, soft volumetric lighting. Vibrant color palette featuring rich blues and warm oranges. Smooth subsurface scattering on characters with exaggerated expressions and stylized proportions."`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -192,7 +79,7 @@ export const generateStyleParagraph = async (theme: string): Promise<string> => 
 };
 
 export const generateStyleImage = async (theme: string): Promise<string> => {
-    const prompt = `Create a Pixar-style concept art piece that defines the visual style for a story about '${theme}'. The image should establish the color palette, lighting, texture, and overall mood in Pixar's signature style - vibrant, warm, emotionally appealing, with soft lighting and painterly textures. Do not include any characters or text. High detail, 16:9 aspect ratio.`;
+    const prompt = `Create a single piece of concept art that defines a unique visual style for a story about '${theme}'. The image should establish the color palette, lighting, texture, and overall mood. Do not include any characters or text. High detail, cinematic, 16:9 aspect ratio.`;
 
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -213,35 +100,17 @@ export const generateStyleImage = async (theme: string): Promise<string> => {
 };
 
 export const generateStoryStructure = async (theme: string, numBeats: number, characterDescription: string): Promise<StoryStructure[]> => {
-    // Combined prompt that extracts scenes AND generates story structure in one call
-    const combinedPrompt = `
-You are an expert in visual storytelling and children's media. Please read the fairy tale below and extract ${numBeats} key scenes that are ideal for illustration, animation, or video adaptation.
-
-Each scene should reflect:
-- A major turning point in the plot or transformation in the character's journey
-- Strong emotional tone (joy, surprise, foolishness, misfortune, freedom)
-- A visualizable situation with physical comedy, magical realism, or exaggerated contrast
-- Use of concrete setting, props, or dialogue that would translate well to illustration
-- A moral or thematic significance (e.g. simplicity vs. greed, letting go, perspective)
-
-For each scene, provide:
-1. actingDirection: A short direction for an actor to perform (use key dialogue or narration from the scene plus a descriptio on what pose to strike)
-2. imagePrompt: Generate a short prompt for AI image generation. Do not describe the character as we are using an input image for that.
-   
-
-3. storyText: The original text excerpt from the scene to be read aloud as narrative
-
-Language: English
-Genre: Children's fairytale with moral twist
-Tone: Lighthearted, ironic, simple
-Focus on making each scene useful for visual adaptation and acting performance.
-
-Fairy tale content:
-${theme}`;
+    const prompt = `You are a creative director. For a story with the theme '${theme}' and a character described as '${characterDescription}', create a structure with ${numBeats} scenes. 
+    For each scene, provide: 
+    1. A short 'actingDirection' for an actor to perform. 
+    2. A detailed 'imagePrompt' for an AI image generator. The AI will receive THREE input images: the first is a style reference, the second is the character reference sheet, and the third is a photo of an actor. The prompt MUST be an explicit instruction to edit the actor's photo. A good prompt is: '**Crucially, you must edit the third input image which contains a person.** Transform the person into the character shown in the second input image, making them fit the description of '${characterDescription}'. You MUST retain the actor's exact facial expression and body pose. Use the first input image *only* as a style reference for the overall artistic mood, color palette, and lighting. Place the transformed character into a [environment based on theme] environment, performing the action of [action from actingDirection]. The final image must be a cinematic, high-detail, 16:9 aspect ratio shot.'
+    3. A short 'storyText' to be read aloud as a narrative for the scene. 
+    
+    Return a JSON array of objects, each containing 'actingDirection', 'imagePrompt', and 'storyText'.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-pro',
-        contents: combinedPrompt,
+        model: 'gemini-2.5-flash',
+        contents: prompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -262,12 +131,6 @@ ${theme}`;
     try {
         const jsonText = response.text.trim();
         const structures = JSON.parse(jsonText);
-        
-        // Debug logging
-        console.log('=== COMBINED STORY STRUCTURE DEBUG ===');
-        console.log('Number of structures:', structures.length);
-        console.log('Story structures:', JSON.stringify(structures, null, 2));
-        
         if (Array.isArray(structures)) {
             return structures;
         }
@@ -288,7 +151,7 @@ export const generateImageForBeat = async (
 ): Promise<any> => {
     // Append style paragraph to the image prompt if provided
     const fullPrompt = styleParagraph 
-        ? `${imagePrompt}\n\n${styleParagraph}`
+        ? `${imagePrompt}\n\nSTYLE GUIDE: ${styleParagraph}`
         : imagePrompt;
     
     // Use Runware workflow: OpenPose preprocessing + Qwen edit plus model

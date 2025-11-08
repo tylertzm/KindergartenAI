@@ -28,8 +28,8 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
 # Configuration
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'output'
+UPLOAD_FOLDER = os.path.abspath('uploads')
+OUTPUT_FOLDER = os.path.abspath('output')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -51,6 +51,11 @@ def process_single_image(image_path: str, index: int, output_dir: str, custom_pr
         output_path = os.path.join(output_dir, output_filename)
 
         print(f"🎬 Generating video {index + 1} from: {os.path.basename(image_path)}")
+        print(f"   📁 Full image path: {image_path}")
+        print(f"   📁 Output path: {output_path}")
+        print(f"   📏 File exists: {os.path.exists(image_path)}")
+        if os.path.exists(image_path):
+            print(f"   📊 File size: {os.path.getsize(image_path)} bytes")
 
         # Combine system prompt with custom prompt if provided
         system_prompt = "smooth animation, natural movement, facial reactions and actions only, NO Lip movement, high quality"
@@ -60,13 +65,18 @@ def process_single_image(image_path: str, index: int, output_dir: str, custom_pr
         else:
             positive_prompt = system_prompt
 
+        print(f"   🤖 Using model: bytedance:1@1")
         result = generate_video_from_image(
             image_path=image_path,
             output_path=output_path,
             positive_prompt=positive_prompt,
-            duration=5
+            duration=5,
+            model="bytedance:1@1",
+            width=1248,
+            height=704,
+            fps=24
         )
-
+        
         print(f"✅ Video {index + 1} completed: {os.path.basename(output_path)}")
         return {
             'index': index,
@@ -74,6 +84,7 @@ def process_single_image(image_path: str, index: int, output_dir: str, custom_pr
             'video_filename': output_filename,
             'video_path': output_path,
             'video_url': result['videoURL'],
+            'model_used': "bytedance:1@1",
             'success': True
         }
 

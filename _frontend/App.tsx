@@ -6,6 +6,7 @@ import CharacterCreator from './components/CharacterCreator';
 import CharacterCapture from './components/CharacterCapture';
 import CaptureStage from './components/CaptureStage';
 import Storyboard from './components/Storyboard';
+import VideoGeneration from './components/VideoGeneration';
 import LoadingIndicator from './components/LoadingIndicator';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -198,6 +199,14 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGenerateVideos = () => {
+    setAppState(AppState.VIDEO_GENERATION);
+  };
+
+  const handleReturnToStoryboard = () => {
+    setAppState(AppState.VIEWING_STORYBOARD);
+  };
+
   // Debug Mode Retry Handlers
   const handleRetryCharacter = async () => {
     if (!characterDescription || !characterPoseImageBase64) return;
@@ -322,6 +331,16 @@ const App: React.FC = () => {
         return <Storyboard 
                   beats={processedBeats} 
                   onReturnToLibrary={handleReturnToLibrary} 
+                  onGenerateVideos={handleGenerateVideos}
+                  themeTitle={themeTitle}
+                  audioDataBase64={audioDataBase64}
+                  isAudioLoading={isAudioLoading}
+                />;
+      case AppState.VIDEO_GENERATION:
+        return <VideoGeneration
+                  beats={processedBeats}
+                  onReturnToStoryboard={handleReturnToStoryboard}
+                  onReturnToLibrary={handleReturnToLibrary}
                   themeTitle={themeTitle}
                   audioDataBase64={audioDataBase64}
                   isAudioLoading={isAudioLoading}

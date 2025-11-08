@@ -5,12 +5,13 @@ import AudioPlayer from './AudioPlayer';
 interface StoryboardProps {
   beats: ProcessedBeat[];
   onReturnToLibrary: () => void;
+  onGenerateVideos?: () => void;
   themeTitle: string;
   audioDataBase64: string | null;
   isAudioLoading: boolean;
 }
 
-const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, themeTitle, audioDataBase64, isAudioLoading }) => {
+const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, onGenerateVideos, themeTitle, audioDataBase64, isAudioLoading }) => {
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const [showShareMessage, setShowShareMessage] = useState(false);
 
@@ -230,6 +231,17 @@ const Storyboard: React.FC<StoryboardProps> = ({ beats, onReturnToLibrary, theme
         >
           Return to Library
         </button>
+        {onGenerateVideos && (
+          <button
+            onClick={onGenerateVideos}
+            className="px-8 py-3 bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+            </svg>
+            Generate Videos
+          </button>
+        )}
         <button
           onClick={handleDownloadData}
           className="px-8 py-3 bg-white text-black font-bold text-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
