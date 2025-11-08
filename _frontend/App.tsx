@@ -164,6 +164,45 @@ const App: React.FC = () => {
       });
   }, [processedBeats, styleImageBase64, characterImageBase64, debugMode]);
 
+  const handleRegenerateImage = useCallback((beatId: number) => {
+    const beatToProcess = processedBeats.find(b => b.id === beatId);
+    if (!beatToProcess || !beatToProcess.capturedImage || !styleImageBase64 || !characterImageBase64) {
+      console.error('Cannot regenerate image: missing required data');
+      return;
+    }
+
+    // Set status to processing
+    setProcessedBeats(prev => prev.map(beat => 
+      beat.id === beatId ? { ...beat, status: 'processing' } : beat
+    ));
+
+    generateImageForBeat(beatToProcess.imagePrompt, beatToProcess.capturedImage, styleImageBase64, characterImageBase64, debugMode, styleParagraph)
+      .then(result => {
+        if (debugMode && typeof result === 'object' && 'openPoseImage' in result) {
+          // Debug mode: result contains both openPose and final image
+          setProcessedBeats(prev => prev.map(beat => 
+            beat.id === beatId ? { 
+              ...beat, 
+              openPoseImage: result.openPoseImage,
+              generatedImage: result.finalImage, 
+              status: 'done' 
+            } : beat
+          ));
+        } else {
+          // Normal mode: result is just the final image
+          setProcessedBeats(prev => prev.map(beat => 
+            beat.id === beatId ? { ...beat, generatedImage: result as string, status: 'done' } : beat
+          ));
+        }
+      })
+      .catch(err => {
+        console.error('Image regeneration failed:', err);
+        setProcessedBeats(prev => prev.map(beat => 
+          beat.id === beatId ? { ...beat, generatedImage: null, status: 'error' } : beat
+        ));
+      });
+  }, [processedBeats, styleImageBase64, characterImageBase64, debugMode, styleParagraph]);
+
   const handleCaptureComplete = () => {
     setAppState(AppState.CREATING_STORYBOARD);
     setProcessingMessage('Rendering your storyboard...');
@@ -344,6 +383,7 @@ const App: React.FC = () => {
                   themeTitle={themeTitle}
                   audioDataBase64={audioDataBase64}
                   isAudioLoading={isAudioLoading}
+                  onRegenerateImage={handleRegenerateImage}
                 />;
       default:
         return <div>Something went wrong.</div>;

@@ -9,6 +9,7 @@ interface VideoGenerationProps {
   themeTitle: string;
   audioDataBase64: string | null;
   isAudioLoading: boolean;
+  onRegenerateImage?: (beatId: number) => void;
 }
 
 interface VideoResult {
@@ -43,7 +44,8 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
   onReturnToLibrary, 
   themeTitle, 
   audioDataBase64, 
-  isAudioLoading 
+  isAudioLoading,
+  onRegenerateImage
 }) => {
   const [videoResults, setVideoResults] = useState<VideoResult[]>([]);
   const [soundResults, setSoundResults] = useState<SoundResult[]>([]);
@@ -165,6 +167,16 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const regenerateImage = async (beatId: number) => {
+    if (!onRegenerateImage) {
+      alert('Image regeneration not available. Please regenerate the entire storyboard.');
+      return;
+    }
+    
+    // Call the parent component's regeneration function
+    onRegenerateImage(beatId);
   };
 
   const renderVideoGrid = () => {
@@ -554,7 +566,7 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
           
           {audioDataBase64 && !isAudioLoading && (
             <div className="flex-shrink-0 ml-6">
-              <AudioPlayer audioDataBase64={audioDataBase64} />
+              <AudioPlayer audioBase64={audioDataBase64} isLoading={isAudioLoading} />
             </div>
           )}
         </div>
@@ -578,7 +590,7 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
                         <span className="text-white font-medium">Story Narration</span>
                       </div>
                       <div className="flex-1">
-                        <AudioPlayer audioDataBase64={audioDataBase64} />
+                        <AudioPlayer audioBase64={audioDataBase64} isLoading={isAudioLoading} />
                       </div>
                     </div>
                   </div>

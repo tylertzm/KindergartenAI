@@ -103,8 +103,8 @@ export const generateStoryStructure = async (theme: string, numBeats: number, ch
     const prompt = `You are a creative director. For a story with the theme '${theme}' and a character described as '${characterDescription}', create a structure with ${numBeats} scenes. 
     For each scene, provide: 
     1. A short 'actingDirection' for an actor to perform. 
-    2. A detailed 'imagePrompt' for an AI image generator. The AI will receive THREE input images: the first is a style reference, the second is the character reference sheet, and the third is a photo of an actor. The prompt MUST be an explicit instruction to edit the actor's photo. A good prompt is: '**Crucially, you must edit the third input image which contains a person.** Transform the person into the character shown in the second input image, making them fit the description of '${characterDescription}'. You MUST retain the actor's exact facial expression and body pose. Use the first input image *only* as a style reference for the overall artistic mood, color palette, and lighting. Place the transformed character into a [environment based on theme] environment, performing the action of [action from actingDirection]. The final image must be a cinematic, high-detail, 16:9 aspect ratio shot.'
-    3. A short 'storyText' to be read aloud as a narrative for the scene. 
+    2. A short 'imagePrompt' for an AI image generator.
+    3. A short 'storyText' to be read aloud as a narrative for the scene. This can be only one sentence.
     
     Return a JSON array of objects, each containing 'actingDirection', 'imagePrompt', and 'storyText'.`;
 

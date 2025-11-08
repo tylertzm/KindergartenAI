@@ -1,38 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-
-// Helper function to decode base64 string to Uint8Array
-function decode(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-// Helper function to convert raw PCM data into an AudioBuffer
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
-  // The raw data is Int16, so we create a view on the buffer
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) {
-      // Normalize the Int16 data to Float32 range [-1.0, 1.0]
-      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-    }
-  }
-  return buffer;
-}
-
+import React, { useState, useRef, useEffect } from 'react';
 
 interface AudioPlayerProps {
   audioBase64: string | null;
@@ -41,111 +7,38 @@ interface AudioPlayerProps {
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioBase64, isLoading }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const audioBufferRef = useRef<AudioBuffer | null>(null);
-  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
-
-  // For pause/resume functionality
-  const startTimeRef = useRef(0);
-  const startOffsetRef = useRef(0);
-
-  const cleanup = useCallback(() => {
-    if (sourceNodeRef.current) {
-      sourceNodeRef.current.onended = null;
+  useEffect(() => {
+    if (audioBase64 && audioRef.current) {
+      // Convert base64 to blob and create object URL
       try {
-        sourceNodeRef.current.stop();
-      } catch(e) {
-        // Ignore errors from stopping an already stopped source.
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(audioBase64), c => c.charCodeAt(0))],
+          { type: 'audio/mpeg' } // Gemini TTS returns MP3
+        );
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioRef.current.src = audioUrl;
+
+        // Cleanup previous URL
+        return () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+      } catch (error) {
+        console.error('Failed to create audio blob:', error);
       }
-      sourceNodeRef.current = null;
     }
-  }, []);
-
-  // Effect to decode audio data when the base64 string is available
-  useEffect(() => {
-    // Reset state when a new audio comes in
-    cleanup();
-    setIsPlaying(false);
-    setIsReady(false);
-    startOffsetRef.current = 0;
-    audioBufferRef.current = null;
-
-    if (audioBase64) {
-      const setupAudio = async () => {
-        try {
-          if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-          }
-          const ctx = audioContextRef.current;
-          const decodedBytes = decode(audioBase64);
-          const buffer = await decodeAudioData(decodedBytes, ctx, 24000, 1);
-          audioBufferRef.current = buffer;
-          setIsReady(true);
-        } catch (error) {
-          console.error("Failed to decode or setup audio:", error);
-          setIsReady(false);
-        }
-      };
-      setupAudio();
-    }
-  }, [audioBase64, cleanup]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cleanup();
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
-      }
-    };
-  }, [cleanup]);
-
-  const play = useCallback(() => {
-    if (!audioContextRef.current || !audioBufferRef.current || isPlaying) return;
-
-    const ctx = audioContextRef.current;
-    
-    // Resume context if it's suspended (e.g., due to browser autoplay policies)
-    if (ctx.state === 'suspended') {
-      ctx.resume();
-    }
-
-    const source = ctx.createBufferSource();
-    source.buffer = audioBufferRef.current;
-    source.connect(ctx.destination);
-    
-    source.onended = () => {
-      setIsPlaying(false);
-      startOffsetRef.current = 0; // Reset for next play from start
-      sourceNodeRef.current = null;
-    };
-
-    source.start(0, startOffsetRef.current % audioBufferRef.current.duration);
-    
-    startTimeRef.current = ctx.currentTime - startOffsetRef.current;
-    sourceNodeRef.current = source;
-    setIsPlaying(true);
-  }, [isPlaying]);
-
-  const pause = useCallback(() => {
-    if (!sourceNodeRef.current || !audioContextRef.current || !isPlaying) return;
-
-    const ctx = audioContextRef.current;
-    const elapsedTime = ctx.currentTime - startTimeRef.current;
-    startOffsetRef.current = elapsedTime;
-
-    // We must clean up the old source node
-    cleanup();
-    setIsPlaying(false);
-  }, [isPlaying, cleanup]);
+  }, [audioBase64]);
 
   const togglePlayPause = () => {
+    if (!audioRef.current) return;
+
     if (isPlaying) {
-      pause();
+      audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      play();
+      audioRef.current.play();
+      setIsPlaying(true);
     }
   };
 
@@ -164,10 +57,16 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioBase64, isLoading }) => 
 
   return (
     <div className="flex items-center justify-center bg-black p-3 border border-gray-800">
-      <button 
-        onClick={togglePlayPause} 
-        disabled={!isReady}
-        className="p-3 bg-white text-black rounded-full hover:bg-gray-300 transition-all focus:outline-none disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
+      <audio
+        ref={audioRef}
+        onEnded={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        preload="metadata"
+      />
+      <button
+        onClick={togglePlayPause}
+        className="p-3 bg-white text-black rounded-full hover:bg-gray-300 transition-all focus:outline-none"
         aria-label={isPlaying ? "Pause narration" : "Play narration"}
       >
         {isPlaying ? (
@@ -182,7 +81,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioBase64, isLoading }) => 
         )}
       </button>
       <span className="ml-4 text-gray-400 font-semibold">
-        {isReady ? "Listen to Your Story" : "Preparing audio..."}
+        Listen to Your Story
       </span>
     </div>
   );
