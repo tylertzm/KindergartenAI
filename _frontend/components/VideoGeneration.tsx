@@ -82,6 +82,10 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
     setCurrentStep('preparing');
     setVideoResults([]);
     setSoundResults([]);
+    setProcessingVideos([]);
+    setCompletedVideos([]);
+    setProcessingSounds([]);
+    setCompletedSounds([]);
 
     try {
       const formData = new FormData();
@@ -112,7 +116,16 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
       // Add sound option
       formData.append('add_sound', addSound.toString());
 
+      // Simulate preparation phase
+      setGenerationProgress(10);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       setCurrentStep('videos');
+      setGenerationProgress(20);
+      
+      // Simulate starting video processing for all videos
+      const videoIndices = successfulBeats.map((_, index) => index);
+      setProcessingVideos(videoIndices);
 
       // Call the backend API
       const response = await fetch('http://localhost:8080/api/generate-videos', {
@@ -126,13 +139,25 @@ const VideoGeneration: React.FC<VideoGenerationProps> = ({
 
       const result: GenerationResponse = await response.json();
       
+      // Simulate progressive completion of videos
+      setProcessingVideos([]);
+      setCompletedVideos(videoIndices);
       setVideoResults(result.video_results);
-      if (result.sound_results) {
+      setGenerationProgress(addSound ? 60 : 100);
+
+      if (addSound && result.sound_results) {
+        setCurrentStep('sounds');
+        // Simulate progressive sound processing
+        setProcessingSounds(videoIndices);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setProcessingSounds([]);
+        setCompletedSounds(videoIndices);
         setSoundResults(result.sound_results);
+        setGenerationProgress(100);
       }
 
       setCurrentStep('complete');
-      setGenerationProgress(100);
 
     } catch (error) {
       console.error('Video generation failed:', error);
